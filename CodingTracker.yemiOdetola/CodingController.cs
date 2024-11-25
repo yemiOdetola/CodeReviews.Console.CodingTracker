@@ -1,6 +1,4 @@
 using System.Configuration;
-using System.Globalization;
-using Microsoft.Data.Sqlite;
 using Spectre.Console;
 
 
