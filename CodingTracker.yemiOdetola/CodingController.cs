@@ -5,7 +5,6 @@ using Spectre.Console;
 namespace CodingTracker.yemiOdetola;
 public class CodingController
 {
-  static string? ConnectionString = ConfigurationManager.AppSettings["ConnectionString"];
   public static void Insert()
   {
     DateTime StartTime = UserInput.GetDateTimeInput(TimeType.StartTime);
