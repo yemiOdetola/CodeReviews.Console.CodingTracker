@@ -85,14 +85,10 @@ public class UserInput
       {
         break;
       }
-
-      // Console.WriteLine("\nInvalid date. Format: dd-MM-yyyy. Try again:");
-      // dateInput = Console.ReadLine();
       dateInput = AnsiConsole.Prompt(new TextPrompt<string>("\nInvalid date. Format: dd-MM-yyyy. Try again:"));
       Console.WriteLine(dateInput);
     }
 
-    // Time input section
     string timePrompt = existingValue.HasValue
         ? $"\nEnter the {label} time (Format: HH:mm) or press Enter to keep [{existingValue.Value:HH:mm}]:"
         : $"\nEnter the {label} time (Format: HH:mm):";
