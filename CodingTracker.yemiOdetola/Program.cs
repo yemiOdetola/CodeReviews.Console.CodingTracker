@@ -1,4 +1,6 @@
 ﻿using CodingTracker.yemiOdetola;
 
-DbQuery.CreateTable();
+string connectionString = DbConnectionHelper.GetConnectionString();
+var dbQuery = new DbQuery(connectionString);
+dbQuery.CreateTable();
 UserInput.GetUserInput();

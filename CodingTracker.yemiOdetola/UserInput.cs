@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using Spectre.Console;
 
 namespace CodingTracker.yemiOdetola;
 
@@ -18,8 +19,6 @@ public class UserInput
       Console.WriteLine("Enter 2 to Insert Record.");
       Console.WriteLine("Enter 3 to Delete Record.");
       Console.WriteLine("Enter 4 to Update Record.");
-      Console.WriteLine("------------------------------------------\n");
-
 
       string? userInput = Console.ReadLine();
 
@@ -49,50 +48,79 @@ public class UserInput
     }
   }
 
-
-  public static DateTime GetDateTimeInput(TimeType TimeInput)
+  public static DateTime GetDateTimeInput(TimeType timeType, DateTime? existingValue = null)
   {
-    string timeType = TimeInput == TimeType.StartTime ? "start" : "end";
-    Console.WriteLine($"\nPlease insert the {timeType} date (Format: dd-MM-yyyy).\nType 00 to set as today.\nType 0 to return to the main menu.");
+    string label = timeType == TimeType.StartTime ? "start" : "end";
 
+    string datePrompt = existingValue.HasValue
+        ? $"\nEnter the {label} date (Format: dd-MM-yyyy) or press Enter to keep [{existingValue.Value:dd-MM-yyyy}]:"
+        : $"\nEnter the {label} date (Format: dd-MM-yyyy).\nType 00 to set as today.\nType 0 to return to the main menu.";
+
+    Console.WriteLine(datePrompt);
     string? dateInput = Console.ReadLine();
-
-    if (dateInput == "0")
-    {
-      GetUserInput();
-    }
 
     DateTime date;
 
-    if (dateInput == "00")
+    while (true)
     {
-      date = DateTime.Today;
-    }
-    else
-    {
-      while (!DateTime.TryParseExact(dateInput, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+      if (string.IsNullOrWhiteSpace(dateInput) && existingValue.HasValue)
       {
-        Console.WriteLine("\nInvalid date. Format: dd-MM-yyyy. \n\n Type 0 to return to the main menu or try again:\n");
-        dateInput = Console.ReadLine();
-        if (dateInput == "0")
-        {
-          GetUserInput();
-        }
+        date = existingValue.Value.Date;
+        break;
       }
+
+      if (dateInput == "0")
+      {
+        GetUserInput();
+        return DateTime.MinValue;
+      }
+
+      if (dateInput == "00")
+      {
+        date = DateTime.Today;
+        break;
+      }
+
+      if (DateTime.TryParseExact(dateInput, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+      {
+        break;
+      }
+
+      // Console.WriteLine("\nInvalid date. Format: dd-MM-yyyy. Try again:");
+      // dateInput = Console.ReadLine();
+      dateInput = AnsiConsole.Prompt(new TextPrompt<string>("\nInvalid date. Format: dd-MM-yyyy. Try again:"));
+      Console.WriteLine(dateInput);
     }
 
-    Console.WriteLine($"\nPlease insert the {timeType} time (Format: HH:mm).");
+    // Time input section
+    string timePrompt = existingValue.HasValue
+        ? $"\nEnter the {label} time (Format: HH:mm) or press Enter to keep [{existingValue.Value:HH:mm}]:"
+        : $"\nEnter the {label} time (Format: HH:mm):";
+
+    Console.WriteLine(timePrompt);
     string? timeInput = Console.ReadLine();
     TimeSpan time;
 
-    while (!TimeSpan.TryParseExact(timeInput, "hh\\:mm", CultureInfo.InvariantCulture, out time))
+    while (true)
     {
-      Console.WriteLine("\nInvalid time. Format: HH:mm. Try again:\n");
+      if (string.IsNullOrWhiteSpace(timeInput) && existingValue.HasValue)
+      {
+        time = existingValue.Value.TimeOfDay;
+        break;
+      }
+
+      if (TimeSpan.TryParseExact(timeInput, "hh\\:mm", CultureInfo.InvariantCulture, out time))
+      {
+        break;
+      }
+
+      Console.WriteLine("\nInvalid time. Format: HH:mm. Try again:");
       timeInput = Console.ReadLine();
     }
 
     return date.Add(time);
   }
+
 
   public static int GetNumberInput(string message)
   {

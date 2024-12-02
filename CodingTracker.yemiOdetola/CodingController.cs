@@ -1,4 +1,5 @@
 using System.Configuration;
+using System.Globalization;
 using Spectre.Console;
 
 
@@ -15,26 +16,30 @@ public class CodingController
 
     try
     {
-      DbQuery.CreateRecord(StartTime, EndTime, DurationMinutes);
-      AnsiConsole.MarkupLine("[green]Record added successfully[/]");
+      string connectionString = DbConnectionHelper.GetConnectionString();
+      var dbQuery = new DbQuery(connectionString);
+      dbQuery.CreateRecord(StartTime, EndTime, DurationMinutes);
+      AnsiConsole.MarkupLine("[green] Record added successfully[/]");
     }
     catch (Exception ex)
     {
       AnsiConsole.MarkupLine($"[red]Error updating record: {ex.Message}[/]");
       return;
     }
+    Console.Clear();
   }
 
   public static void Delete()
   {
-    Console.Clear();
     GetAllRecords();
 
     var recordId = UserInput.GetNumberInput("\nPlease type the Id of the record you want to delete or type 0 to go back to Main Menu\n");
 
     try
     {
-      DbQuery.DeleteRecord(recordId);
+      string connectionString = DbConnectionHelper.GetConnectionString();
+      var dbQuery = new DbQuery(connectionString);
+      dbQuery.DeleteRecord(recordId);
       AnsiConsole.MarkupLine($"[red]Record with Id {recordId} was deleted.[/]");
     }
     catch (Exception ex)
@@ -42,6 +47,7 @@ public class CodingController
       AnsiConsole.MarkupLine($"[red]Error deleting record: {ex.Message}[/]");
       return;
     }
+    Console.Clear();
     UserInput.GetUserInput();
   }
 
@@ -53,19 +59,26 @@ public class CodingController
 
     try
     {
-      int checkQuery = DbQuery.FetchSingleRecord(recordId);
-      if (checkQuery == 0)
+      string connectionString = DbConnectionHelper.GetConnectionString();
+      var dbQuery = new DbQuery(connectionString);
+      CodingSession? record = dbQuery.FetchSingleRecord(recordId);
+
+      Console.WriteLine($"record starttime {record?.StartTime}");
+
+      if (record == null)
       {
         AnsiConsole.MarkupLine($"[red]Record with Id {recordId} does not exist[/] \n \n");
       }
       else
       {
-        DateTime StartTime = UserInput.GetDateTimeInput(TimeType.StartTime);
-        DateTime EndTime = UserInput.GetDateTimeInput(TimeType.EndTime);
+        DateTime StartConverted = DateTime.ParseExact(record.StartTime, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        DateTime EndConverted = DateTime.ParseExact(record.EndTime, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        DateTime StartTime = UserInput.GetDateTimeInput(TimeType.StartTime, StartConverted);
+        DateTime EndTime = UserInput.GetDateTimeInput(TimeType.EndTime, EndConverted);
         TimeSpan Duration = CalculateDuration(StartTime, EndTime);
         int DurationMinutes = (int)Duration.TotalMinutes;
 
-        DbQuery.UpdateRecord(recordId, StartTime, EndTime, DurationMinutes);
+        dbQuery.UpdateRecord(recordId, StartTime, EndTime, DurationMinutes);
       }
     }
     catch (Exception ex)
@@ -73,14 +86,16 @@ public class CodingController
       AnsiConsole.WriteLine(ex.Message);
       AnsiConsole.MarkupLine($"[red]Unable to update record with Id: {recordId} \n");
     }
+    Console.Clear();
   }
 
   public static void GetAllRecords()
   {
-    Console.Clear();
     try
     {
-      List<CodingSession> tableData = DbQuery.FetchAllRecords();
+      string connectionString = DbConnectionHelper.GetConnectionString();
+      var dbQuery = new DbQuery(connectionString);
+      List<CodingSession> tableData = dbQuery.FetchAllRecords();
       foreach (var record in tableData)
       {
         AnsiConsole.MarkupLine($"[purple]{record.Id} - StartTime: {record.StartTime} EndTime: {record.EndTime} - Duration: {record.Duration} minutes \n[/]");
@@ -95,6 +110,11 @@ public class CodingController
 
   public static TimeSpan CalculateDuration(DateTime StartTime, DateTime EndTime)
   {
+    if (EndTime < StartTime)
+    {
+      Console.WriteLine("\nEnd time cannot be earlier than the start time. Please enter valid times.");
+      return TimeSpan.Zero;
+    }
     return EndTime.Subtract(StartTime);
   }
 
